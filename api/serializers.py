@@ -1,21 +1,66 @@
 from rest_framework import serializers
 from api import models
+import uuid 
 
-class BloqSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = models.Bloq
-        fields = ['id', 'title', 'address']
+# The first element in each tuple is the actual value to be set on the model, 
+# and the second element is the human-readable name. 
 
-class LockerSerializer(serializers.ModelSerializer):
-    bloqId = serializers.PrimaryKeyRelatedField(source='pk', queryset=models.Bloq.objects.all())
 
-    class Meta:
-        model = models.Locker
-        fields = ['id', 'status', 'isOccupied', 'bloqId']
+class BloqStatus:
+    OPEN = "OPEN"
+    CLOSED = "CLOSED"
 
-class RentSerializer(serializers.ModelSerializer):
-    lockerId = serializers.PrimaryKeyRelatedField(source='pk', queryset=models.Locker.objects.all())
+    CHOICES = [
+        (OPEN, 'Open'),
+        (CLOSED, 'Closed'),
+    ]
 
-    class Meta:
-        model = models.Rent
-        fields = ['id', 'weight', 'size', 'status', 'createdAt', 'droppedOffAt', 'pickedUpAt', 'lockerId']
+class RentSize:
+    XS = "XS"
+    S = "S"
+    M = "M"
+    L = "L"
+    XL = "XL"
+
+    CHOICES = [
+        (XS, "XS"),
+        (S, "S"),
+        (M, "M"),
+        (L, "L"),
+        (XL, "XL"),
+    ]
+
+class RentStatus:
+    CREATED = "CREATED"
+    WAITING_DROPOFF = "WAITING_DROPOFF"
+    WAITING_PICKUP = "WAITING_PICKUP"
+    DELIVERED = "DELIVERED"
+
+    CHOICES = [
+        (CREATED, "Created"),
+        (WAITING_DROPOFF, "Waiting Drop-off"),
+        (WAITING_PICKUP, "Waiting Pick-up"),
+        (DELIVERED, "Delivered"),
+    ]
+
+class BloqSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=False)
+    title = serializers.CharField(max_length=100, allow_null=False, allow_blank=False)
+    address = serializers.CharField(max_length=100, allow_null=False, allow_blank=False)
+
+class LockerSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=False)
+    bloqId = serializers.UUIDField(required=False)
+    status = serializers.ChoiceField(choices=BloqStatus.CHOICES)
+    isOccupied = serializers.BooleanField(required=True)
+
+
+class RentSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=False)
+    lockerId = serializers.UUIDField(required=False)
+    weight = serializers.IntegerField(min_value=1, max_value=99, allow_null=False)
+    size = serializers.ChoiceField(choices=RentSize.CHOICES)
+    status = serializers.ChoiceField(choices=RentStatus.CHOICES)
+    createdAt = serializers.DateTimeField(required=False, allow_null=True)
+    droppedOffAt = serializers.DateTimeField(required=False, allow_null=True)
+    pickedUpAt = serializers.DateTimeField(required=False, allow_null=True)

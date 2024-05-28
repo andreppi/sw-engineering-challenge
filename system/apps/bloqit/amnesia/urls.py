@@ -21,14 +21,17 @@ from rest_framework import routers
 from api import views
 
 router = routers.DefaultRouter()
-router.register(r'bloqs', views.BloqViewSet)
-router.register(r'lockers', views.LockerViewSet)
-router.register(r'rents', views.RentViewSet)
 
 
 # Wire up our API using automatic URL routing.
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
+    path('api/bloqs/', views.BloqCreateViewSet.as_view(), name='bloqs'),
+    path('api/bloqs/<uuid:bloqId>', views.BloqRetrieveUpdateViewSet.as_view(), name='bloqs_update'),
+    path('api/lockers/', views.LockerCreateViewSet.as_view(), name='lockers'),
+    path('api/lockers/<uuid:lockerId>', views.LockerRetrieveUpdateViewSet.as_view(), name='lockers_update'),
+    path('api/rents/', views.RentCreateViewSet.as_view(), name='rents'),
+    path('api/rents/<uuid:rentId>', views.RentRetrieveUpdateViewSet.as_view(), name='rents_update'),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]

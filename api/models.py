@@ -1,50 +1,176 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+import uuid
+import json
+import os
 
-# The first element in each tuple is the actual value to be set on the model, 
-# and the second element is the human-readable name. 
-class LockerStatus(models.TextChoices):
-    OPEN = "OPEN", _("Open")
-    CLOSED = "CLOSED", _("Closed")
+class Bloq:
+    file_path = os.path.join(os.path.dirname(__file__), '../data/bloqs.json')
 
-class RentSize(models.TextChoices):
-    XS = "XS", _("XS")
-    S = "S", _("S")
-    M = "M", _("M")
-    L = "L", _("L")
-    XL = "XL", _("XL")
+    @staticmethod
+    def load_data():
+        with open(Bloq.file_path, 'r') as file:
+            return json.load(file)
 
-class RentStatus(models.TextChoices):
-    CREATED = "CREATED", _("Created")
-    WAITING_DROPOFF = "WAITING_DROPOFF", _("Waiting Drop-off")
-    WAITING_PICKUP = "WAITING_PICKUP", _("Waiting Pick-up")
-    DELIVERED = "DELIVERED", _("Delivered")
+    @staticmethod
+    def save_data(data):
+        try:
+            json_object = json.loads(json.dumps(data))
+        except ValueError as e:
+            return False
+        else:
+            with open(Bloq.file_path, 'w') as file:
+                json.dump(data, file, indent=4, default=str)
+                return True
 
-class Bloq(models.Model):
-    title = models.CharField(max_length=100, blank=True, default='')
-    address = models.CharField(max_length=100, blank=True, default='')
+    @classmethod
+    def get_bloq(cls, bloqId):
+        data = cls.load_data()
 
-    def __str__(self):
-        return self.title
+        for r in data:
+            idField = r.get('id')
 
-class Locker(models.Model):
-    bloq = models.ForeignKey(Bloq, on_delete=models.CASCADE, related_name='lockers')
-    status = models.CharField(max_length=50, choices=LockerStatus.choices, default=LockerStatus.OPEN,)
-    isOccupied = models.BooleanField()
+            if str(idField) == str(bloqId):
+                return r
+            
+        return None
 
-    def __str__(self):
-        return "%s - %s" % (self.bloq.title, self.status)
+    @classmethod
+    def set_bloq(cls, validated_data):
+        data = cls.load_data()
 
-
-class Rent(models.Model):
-    locker = models.ForeignKey(Locker, on_delete=models.CASCADE, related_name='rents')
-    weight = models.FloatField()
-    size = models.CharField(max_length=50, choices=RentSize.choices, default=RentSize.XS,)
-    status = models.CharField(max_length=50, choices=RentStatus.choices, default=RentStatus.CREATED,)
-    createdAt = models.DateTimeField(auto_now_add=True)
-    droppedOffAt = models.DateTimeField(null=True, auto_now=False, auto_now_add=False)
-    pickedUpAt = models.DateTimeField(null=True, auto_now=False, auto_now_add=False)
-
-    def __str__(self):
-        return "%s - %s" % (self.size, self.status)
+        validated_data['id'] = str(uuid.uuid4())
+        data.append(validated_data)
+        
+        return cls.save_data(data)
     
+    @classmethod
+    def update_bloq(cls, instance, validated_data):
+        data = cls.load_data()
+
+        for r in data:
+            idField = r.get('id')
+
+            if str(idField) == str(instance.get('id')):
+                r['title'] = validated_data.get('title', instance.get('title'))
+                r['address'] = validated_data.get('address', instance.get('address'))
+        
+        return cls.save_data(data)
+
+
+class Locker:
+    file_path = os.path.join(os.path.dirname(__file__), '../data/lockers.json')
+
+    @staticmethod
+    def load_data():
+        with open(Locker.file_path, 'r') as file:
+            return json.load(file)
+
+    @staticmethod
+    def save_data(data):
+        try:
+            json_object = json.loads(json.dumps(data))
+        except ValueError as e:
+            return False
+        else:
+            with open(Locker.file_path, 'w') as file:
+                json.dump(data, file, indent=4, default=str)
+                return True
+
+    @classmethod
+    def get_locker(cls, lockerId):
+        data = cls.load_data()
+
+        for r in data:
+            idField = r.get('id')
+
+            if str(idField) == str(lockerId):
+                return r
+            
+        return None
+
+    @classmethod
+    def set_locker(cls, validated_data):
+        data = cls.load_data()
+
+        validated_data['id'] = str(uuid.uuid4())
+        validated_data['bloqId'] = str(validated_data['bloqId'])
+        data.append(validated_data)
+        
+        return cls.save_data(data)
+    
+    @classmethod
+    def update_locker(cls, instance, validated_data):
+        data = cls.load_data()
+
+        for r in data:
+            idField = r.get('id')
+
+            if str(idField) == str(instance.get('id')):
+                r['bloqId'] = str(validated_data.get('bloqId', instance.get('bloqId')))
+                r['status'] = validated_data.get('status', instance.get('status'))
+                r['isOccupied'] = validated_data.get('isOccupied', instance.get('isOccupied'))
+        
+        return cls.save_data(data)
+
+
+class Rent:
+    file_path = os.path.join(os.path.dirname(__file__), '../data/rents.json')
+
+    @staticmethod
+    def load_data():
+        with open(Rent.file_path, 'r') as file:
+            return json.load(file)
+
+    @staticmethod
+    def save_data(data):
+        try:
+            json_object = json.loads(json.dumps(data))
+        except ValueError as e:
+            return False
+        else:
+            with open(Rent.file_path, 'w') as file:
+                json.dump(data, file, indent=4, default=str)
+                return True
+
+    @classmethod
+    def get_rent(cls, rentId):
+        data = cls.load_data()
+
+        for r in data:
+            idField = r.get('id')
+
+            if str(idField) == str(rentId):
+                return r
+            
+        return None
+
+    @classmethod
+    def set_rent(cls, validated_data):
+        data = cls.load_data()
+
+        validated_data['id'] = str(uuid.uuid4())
+        validated_data['lockerId'] = str(validated_data['lockerId'])
+
+        data.append(validated_data)
+        
+        return cls.save_data(data)
+    
+    @classmethod
+    def update_rent(cls, instance, validated_data):
+        data = cls.load_data()
+
+        for r in data:
+            idField = r.get('id')
+
+            if str(idField) == str(instance.get('id')):
+                r['lockerId'] = str(validated_data.get('lockerId'))
+                r['weight'] = validated_data.get('weight')
+                r['size'] = validated_data.get('size')
+                r['status'] = validated_data.get('status')
+                r['createdAt'] = validated_data.get('createdAt', instance.get('createdAt'))
+                r['droppedOffAt'] = validated_data.get('droppedOffAt', instance.get('droppedOffAt'))
+                r['pickedUpAt'] = validated_data.get('pickedUpAt', instance.get('pickedUpAt'))
+        
+        return cls.save_data(data)
+

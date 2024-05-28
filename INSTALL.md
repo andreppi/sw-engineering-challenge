@@ -9,3 +9,7 @@ python3 manage.py startapp api
 pip install djangorestframework
 pip install markdown       
 pip install django-filter 
+
+# to work the app
+cd /apps/bloqit/amnesia
+workon bloqit
