@@ -5,7 +5,6 @@ import uuid
 # The first element in each tuple is the actual value to be set on the model, 
 # and the second element is the human-readable name. 
 
-
 class BloqStatus:
     OPEN = "OPEN"
     CLOSED = "CLOSED"
@@ -44,20 +43,20 @@ class RentStatus:
     ]
 
 class BloqSerializer(serializers.Serializer):
-    id = serializers.UUIDField(required=False)
+    id = serializers.UUIDField(format='hex_verbose', read_only=True)
     title = serializers.CharField(max_length=100, allow_null=False, allow_blank=False)
     address = serializers.CharField(max_length=100, allow_null=False, allow_blank=False)
 
 class LockerSerializer(serializers.Serializer):
-    id = serializers.UUIDField(required=False)
-    bloqId = serializers.UUIDField(required=False)
+    id = serializers.UUIDField(format='hex_verbose', read_only=True)
+    bloqId = serializers.UUIDField(format='hex_verbose', required=False)
     status = serializers.ChoiceField(choices=BloqStatus.CHOICES)
     isOccupied = serializers.BooleanField(required=True)
 
 
 class RentSerializer(serializers.Serializer):
-    id = serializers.UUIDField(required=False)
-    lockerId = serializers.UUIDField(required=False)
+    id = serializers.UUIDField(format='hex_verbose', read_only=True)
+    lockerId = serializers.UUIDField(format='hex_verbose', required=False)
     weight = serializers.IntegerField(min_value=1, max_value=99, allow_null=False)
     size = serializers.ChoiceField(choices=RentSize.CHOICES)
     status = serializers.ChoiceField(choices=RentStatus.CHOICES)

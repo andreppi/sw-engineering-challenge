@@ -1,176 +1,124 @@
-from django.db import models
-from django.utils.translation import gettext_lazy as _
+"""
+DatabaseHandler: Manages JSON file operations.
+ModelBase: Base class with common CRUD operations.
+Bloq, Locker, Rent: Inherit from ModelBase and define specific methods if needed.
+Error Handling: Added a try-except block in save_data for JSON validation.
+"""
+
+
 import uuid
 import json
 import os
+import json
 
-class Bloq:
-    file_path = os.path.join(os.path.dirname(__file__), '../data/bloqs.json')
+# workaround to avoid "Object of type UUID is not JSON serializable" error for storing UUIDs
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, uuid.UUID):
+            # if the obj is uuid, we simply return the value of uuid
+            return obj.hex
+        return json.JSONEncoder.default(self, obj)
 
-    @staticmethod
-    def load_data():
-        with open(Bloq.file_path, 'r') as file:
+
+class DatabaseHandler:
+    def __init__(self, file_name):
+        self.file_path = os.path.join(os.path.dirname(__file__), file_name)
+
+    def load_data(self):
+        with open(self.file_path, 'r') as file:
             return json.load(file)
 
-    @staticmethod
-    def save_data(data):
+    def save_data(self, data):
         try:
-            json_object = json.loads(json.dumps(data))
+            json_object = json.loads(json.dumps(data, cls=UUIDEncoder))
         except ValueError as e:
             return False
         else:
-            with open(Bloq.file_path, 'w') as file:
+            with open(self.file_path, 'w') as file:
                 json.dump(data, file, indent=4, default=str)
                 return True
+            
+class ModelBase:
+    dbh: DatabaseHandler
 
     @classmethod
-    def get_bloq(cls, bloqId):
-        data = cls.load_data()
-
-        for r in data:
-            idField = r.get('id')
-
-            if str(idField) == str(bloqId):
-                return r
-            
+    def get_item(self, item_id):
+        data = self.dbh.load_data()
+        for item in data:
+            if str(item.get('id')) == str(item_id):
+                return item
         return None
 
     @classmethod
-    def set_bloq(cls, validated_data):
-        data = cls.load_data()
+    def create_item(self, validated_data) :
+        data = self.dbh.load_data()
 
         validated_data['id'] = str(uuid.uuid4())
+
         data.append(validated_data)
+
+        if self.dbh.save_data(data):
+            return validated_data
         
-        return cls.save_data(data)
+        return None
     
     @classmethod
-    def update_bloq(cls, instance, validated_data):
-        data = cls.load_data()
+    def delete_item(self, item_id):
+        data = self.dbh.load_data()
+
+        copy = [r for r in data if str(r.get('id')) != str(item_id)]
+
+        return self.dbh.save_data(copy)
+    
+
+class Bloq(ModelBase):
+    dbh = DatabaseHandler('../data/bloqs.json')
+
+    @classmethod
+    def update_bloq(self, instance, resource) -> bool:
+        data = self.dbh.load_data()
+
+        for r in data:
+            if str(r.get('id')) == instance.get('id'):
+                r['title'] = resource.get('title', instance.get('title'))
+                r['address'] = resource.get('address', instance.get('address'))
+
+        return self.dbh.save_data(data)
+
+class Locker(ModelBase):
+    dbh = DatabaseHandler('../data/lockers.json')
+    
+    @classmethod
+    def update_locker(self, instance, resource) -> bool:
+        data = self.dbh.load_data()
 
         for r in data:
             idField = r.get('id')
 
             if str(idField) == str(instance.get('id')):
-                r['title'] = validated_data.get('title', instance.get('title'))
-                r['address'] = validated_data.get('address', instance.get('address'))
+                r['bloqId'] = str(resource.get('bloqId', instance.get('bloqId')))
+                r['status'] = resource.get('status', instance.get('status'))
+                r['isOccupied'] = resource.get('isOccupied', instance.get('isOccupied'))
         
-        return cls.save_data(data)
+        return self.dbh.save_data(data)
 
-
-class Locker:
-    file_path = os.path.join(os.path.dirname(__file__), '../data/lockers.json')
-
-    @staticmethod
-    def load_data():
-        with open(Locker.file_path, 'r') as file:
-            return json.load(file)
-
-    @staticmethod
-    def save_data(data):
-        try:
-            json_object = json.loads(json.dumps(data))
-        except ValueError as e:
-            return False
-        else:
-            with open(Locker.file_path, 'w') as file:
-                json.dump(data, file, indent=4, default=str)
-                return True
-
-    @classmethod
-    def get_locker(cls, lockerId):
-        data = cls.load_data()
-
-        for r in data:
-            idField = r.get('id')
-
-            if str(idField) == str(lockerId):
-                return r
-            
-        return None
-
-    @classmethod
-    def set_locker(cls, validated_data):
-        data = cls.load_data()
-
-        validated_data['id'] = str(uuid.uuid4())
-        validated_data['bloqId'] = str(validated_data['bloqId'])
-        data.append(validated_data)
-        
-        return cls.save_data(data)
+class Rent(ModelBase):
+    dbh = DatabaseHandler('../data/rents.json')
     
     @classmethod
-    def update_locker(cls, instance, validated_data):
-        data = cls.load_data()
+    def update_rent(self, instance, resource) -> bool:
+        data = self.dbh.load_data()
 
         for r in data:
             idField = r.get('id')
 
             if str(idField) == str(instance.get('id')):
-                r['bloqId'] = str(validated_data.get('bloqId', instance.get('bloqId')))
-                r['status'] = validated_data.get('status', instance.get('status'))
-                r['isOccupied'] = validated_data.get('isOccupied', instance.get('isOccupied'))
+                r['lockerId'] = str(resource.get('lockerId'))
+                r['weight'] = resource.get('weight')
+                r['size'] = resource.get('size')
+                r['status'] = resource.get('status')
+                r['createdAt'] = resource.get('createdAt', instance.get('createdAt'))
+                r['droppedOffAt'] = resource.get('droppedOffAt', instance.get('droppedOffAt'))
+                r['pickedUpAt'] = resource.get('pickedUpAt', instance.get('pickedUpAt'))
         
-        return cls.save_data(data)
-
-
-class Rent:
-    file_path = os.path.join(os.path.dirname(__file__), '../data/rents.json')
-
-    @staticmethod
-    def load_data():
-        with open(Rent.file_path, 'r') as file:
-            return json.load(file)
-
-    @staticmethod
-    def save_data(data):
-        try:
-            json_object = json.loads(json.dumps(data))
-        except ValueError as e:
-            return False
-        else:
-            with open(Rent.file_path, 'w') as file:
-                json.dump(data, file, indent=4, default=str)
-                return True
-
-    @classmethod
-    def get_rent(cls, rentId):
-        data = cls.load_data()
-
-        for r in data:
-            idField = r.get('id')
-
-            if str(idField) == str(rentId):
-                return r
-            
-        return None
-
-    @classmethod
-    def set_rent(cls, validated_data):
-        data = cls.load_data()
-
-        validated_data['id'] = str(uuid.uuid4())
-        validated_data['lockerId'] = str(validated_data['lockerId'])
-
-        data.append(validated_data)
-        
-        return cls.save_data(data)
-    
-    @classmethod
-    def update_rent(cls, instance, validated_data):
-        data = cls.load_data()
-
-        for r in data:
-            idField = r.get('id')
-
-            if str(idField) == str(instance.get('id')):
-                r['lockerId'] = str(validated_data.get('lockerId'))
-                r['weight'] = validated_data.get('weight')
-                r['size'] = validated_data.get('size')
-                r['status'] = validated_data.get('status')
-                r['createdAt'] = validated_data.get('createdAt', instance.get('createdAt'))
-                r['droppedOffAt'] = validated_data.get('droppedOffAt', instance.get('droppedOffAt'))
-                r['pickedUpAt'] = validated_data.get('pickedUpAt', instance.get('pickedUpAt'))
-        
-        return cls.save_data(data)
-
+        return self.dbh.save_data(data)

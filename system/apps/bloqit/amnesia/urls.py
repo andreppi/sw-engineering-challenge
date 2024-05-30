@@ -27,11 +27,11 @@ router = routers.DefaultRouter()
 # Additionally, we include login URLs for the browsable API.
 urlpatterns = [
     path('', include(router.urls)),
-    path('api/bloqs/', views.BloqCreateViewSet.as_view(), name='bloqs'),
-    path('api/bloqs/<uuid:bloqId>', views.BloqRetrieveUpdateViewSet.as_view(), name='bloqs_update'),
+    path('api/bloqs/', views.BloqViewSet.as_view(), name='bloqs'),
+    path('api/bloqs/<uuid:bloq_id>/', views.BloqResourceViewSet.as_view(), name='bloqs_update'),
     path('api/lockers/', views.LockerCreateViewSet.as_view(), name='lockers'),
-    path('api/lockers/<uuid:lockerId>', views.LockerRetrieveUpdateViewSet.as_view(), name='lockers_update'),
+    path('api/lockers/<uuid:locker_id>/', views.LockerResourceViewSet.as_view(), name='lockers_update'),
     path('api/rents/', views.RentCreateViewSet.as_view(), name='rents'),
-    path('api/rents/<uuid:rentId>', views.RentRetrieveUpdateViewSet.as_view(), name='rents_update'),
+    path('api/rents/<uuid:rent_id>/', views.RentResourceViewSet.as_view(), name='rents_update'),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
 ]
