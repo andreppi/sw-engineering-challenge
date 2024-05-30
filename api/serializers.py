@@ -5,7 +5,7 @@ import uuid
 # The first element in each tuple is the actual value to be set on the model, 
 # and the second element is the human-readable name. 
 
-class BloqStatus:
+class LockerStatus:
     OPEN = "OPEN"
     CLOSED = "CLOSED"
 
@@ -50,7 +50,7 @@ class BloqSerializer(serializers.Serializer):
 class LockerSerializer(serializers.Serializer):
     id = serializers.UUIDField(format='hex_verbose', read_only=True)
     bloqId = serializers.UUIDField(format='hex_verbose', required=False)
-    status = serializers.ChoiceField(choices=BloqStatus.CHOICES)
+    status = serializers.ChoiceField(choices=LockerStatus.CHOICES)
     isOccupied = serializers.BooleanField(required=True)
 
 

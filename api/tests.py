@@ -31,25 +31,25 @@ class LockerModelTest(TestCase):
     def setUp(self):
         self.bloq_data = {'title': 'Test Bloq', 'address': '123 Test Street'}
         self.bloq = models.Bloq.create_item(self.bloq_data)
-        self.locker_data = {'bloqId': self.bloq['id'], 'status': serializers.BloqStatus.OPEN, 'isOccupied': False}
+        self.locker_data = {'bloqId': self.bloq['id'], 'status': serializers.LockerStatus.OPEN, 'isOccupied': False}
         self.locker = models.Locker.create_item(self.locker_data)
 
     def test_model_create_locker(self):
         locker = models.Locker.get_item(self.locker['id'])
         self.assertIsNotNone(locker)
-        self.assertEqual(locker['status'], serializers.BloqStatus.OPEN)
+        self.assertEqual(locker['status'], serializers.LockerStatus.OPEN)
 
     def test_model_update_locker(self):
-        updated_data = {'status': serializers.BloqStatus.CLOSED, 'isOccupied': True}
+        updated_data = {'status': serializers.LockerStatus.CLOSED, 'isOccupied': True}
         models.Locker.update_locker(self.locker, updated_data)
         updated_locker = models.Locker.get_item(self.locker['id'])
-        self.assertEqual(updated_locker['status'], serializers.BloqStatus.CLOSED)
+        self.assertEqual(updated_locker['status'], serializers.LockerStatus.CLOSED)
 
 class RentModelTest(TestCase):
     def setUp(self):
         self.bloq_data = {'title': 'Test Bloq', 'address': '123 Test Street'}
         self.bloq = models.Bloq.create_item(self.bloq_data)
-        self.locker_data = {'bloqId': self.bloq['id'], 'status': serializers.BloqStatus.OPEN, 'isOccupied': False}
+        self.locker_data = {'bloqId': self.bloq['id'], 'status': serializers.LockerStatus.OPEN, 'isOccupied': False}
         self.locker = models.Locker.create_item(self.locker_data)
         self.rent_data = {'lockerId': self.locker['id'], 'weight': 10, 'size': serializers.RentSize.M, 'status': serializers.RentStatus.CREATED, 'createdAt': '2023-01-01T00:00:00Z'}
         self.rent = models.Rent.create_item(self.rent_data)
@@ -104,8 +104,8 @@ class LockerAPITest(TestCase):
         self.client = APIClient()
         self.bloq_data = {'title': 'Test Bloq', 'address': '123 Test Street'}
         self.bloq_response = self.client.post('/api/bloqs/', self.bloq_data, format='json')
-        self.locker_data = {'bloqId': self.bloq_response.data['id'], 'status': serializers.BloqStatus.OPEN, 'isOccupied': False}
-        self.updated_locker_data = {'bloqId': self.bloq_response.data['id'], 'status': serializers.BloqStatus.CLOSED, 'isOccupied': True}
+        self.locker_data = {'bloqId': self.bloq_response.data['id'], 'status': serializers.LockerStatus.OPEN, 'isOccupied': False}
+        self.updated_locker_data = {'bloqId': self.bloq_response.data['id'], 'status': serializers.LockerStatus.CLOSED, 'isOccupied': True}
 
     def test_api_create_locker(self):
         response = self.client.post('/api/lockers/', self.locker_data, format='json')
@@ -132,7 +132,7 @@ class RentAPITest(TestCase):
         self.client = APIClient()
         self.bloq_data = {'title': 'Test Bloq', 'address': '123 Test Street'}
         self.bloq_response = self.client.post('/api/bloqs/', self.bloq_data, format='json')
-        self.locker_data = {'bloqId': self.bloq_response.data['id'], 'status': serializers.BloqStatus.OPEN, 'isOccupied': False}
+        self.locker_data = {'bloqId': self.bloq_response.data['id'], 'status': serializers.LockerStatus.OPEN, 'isOccupied': False}
         self.locker_response = self.client.post('/api/lockers/', self.locker_data, format='json')
         self.rent_data = {'lockerId': self.locker_response.data['id'], 'weight': 10, 'size': serializers.RentSize.M, 'status': serializers.RentStatus.CREATED, 'createdAt': '2023-01-01T00:00:00Z'}
         self.updated_rent_data = {'lockerId': self.locker_response.data['id'], 'weight': 15, 'size': serializers.RentSize.L, 'status': serializers.RentStatus.CREATED}
